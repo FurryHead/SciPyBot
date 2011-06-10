@@ -49,10 +49,10 @@ class PluginManager(object):
             try:
                 handler = self.handlers[eventName][args[2]]
                 handler(*args)
-            except KeyError,ke: print ke
+            except KeyError,ke: pass
             except Exception, e:
                 s = handler.__self__
-                print("Plugin "+s.__module__+"."+s.__class__.__name__+" "+e.__class__.__name__+": "+e.__str__())
+                print("Plugin "+s.__class__.__name__+" "+e.__class__.__name__+": "+e.__str__())
         else:
             for handler in self.handlers[eventName]:
                 try:
@@ -60,33 +60,33 @@ class PluginManager(object):
                 except KeyError: pass
                 except Exception, e:
                     s = handler.__self__
-                    print("Plugin "+s.__module__+"."+s.__class__.__name__+" "+e.__class__.__name__+": "+e.__str__())
+                    print("Plugin "+s.__class__.__name__+" "+e.__class__.__name__+": "+e.__str__())
     
     def loadedPlugin(self, pluginName):
-        return pluginName in self.plugins
+        return pluginName.lower() in self.plugins
     
     def pluginExists(self, pluginName):
-        return plugins.getPlugin(pluginName) is not None
+        return plugins.getPlugin(pluginName.lower()) is not None
         
     def loadPlugin(self, pluginName):
         plugins.refresh()
-        if not self.loadedPlugin(pluginName):
-            if not self.pluginExists(pluginName):
+        if not self.loadedPlugin(pluginName.lower()):
+            if not self.pluginExists(pluginName.lower()):
                 err = "No such plugin."
                 return err
             
             pClass = None
             try:
-                pClass = plugins.getPlugin(pluginName)
+                pClass = plugins.getPlugin(pluginName.lower())
             except Exception, e:
-                err = "Cannot load plugin {0} ({1}: {2})".format(pluginName, e.__class__.__name__, e.__str__())
+                err = "Cannot load plugin "+pluginName+" ("+e.__class__.__name__+": "+e.__str__()+")"
                 print(err)
                 return err
             
             try:
-                self.plugins[pluginName] = pClass(self.server)
+                self.plugins[pluginName.lower()] = pClass(self.server)
             except Exception, e:
-                err = "Could not initialize {0} ({1}: {2})".format(pluginName, e.__class__.__name__, e.__str__())
+                err = "Could not initialize "+pluginName+" ("+e.__class__.__name__+": "+e.__str__()+")"
                 print(err)
                 return err
                 
@@ -94,22 +94,28 @@ class PluginManager(object):
             err = "Module has already been loaded."
             return err
     
+    def getPlugin(self, pluginName): 
+        try:
+            return self.plugins[pluginName.lower()]
+        except KeyError:
+            return None
+    
     def reloadPlugin(self, pluginName):
         errs = {}
         
-        err = self.unloadPlugin(pluginName)
+        err = self.unloadPlugin(pluginName.lower())
         if err is not None: 
             errs["unload"] = err
             
-        err = self.loadPlugin(pluginName)
+        err = self.loadPlugin(pluginName.lower())
         if err is not None: 
             errs["load"] = err
         
         return errs
     
     def unloadPlugin(self, pluginName):
-        if self.loadedPlugin(pluginName):
-            inst = self.plugins[pluginName]
+        if self.loadedPlugin(pluginName.lower()):
+            inst = self.plugins[pluginName.lower()]
             for event, eList in self.handlers.items():
                 if event == "command":
                     for cmd,func in eList.items():
@@ -120,7 +126,7 @@ class PluginManager(object):
                         if func.__self__ == inst:
                             eList.remove(inst)
                             
-            del self.plugins[pluginName]
+            del self.plugins[pluginName.lower()]
         else:
             err = "Plugin "+pluginName+" is not loaded."
             return err
@@ -128,7 +134,7 @@ class PluginManager(object):
     def loadAllPlugins(self):
         errs = {}
         for plugin in self.server.config["start_plugins"]:
-            err = self.loadPlugin(plugin)
+            err = self.loadPlugin(plugin.lower())
             if err is not None:
                 errs[plugin] = err
                 
@@ -137,7 +143,7 @@ class PluginManager(object):
     def unloadAllPlugins(self):
         errs = {}
         for plugin in self.plugins:
-            err = self.unloadPlugin(plugin)
+            err = self.unloadPlugin(plugin.lower())
             if err is not None:
                 errs[plugin] = err
             
@@ -151,6 +157,7 @@ class IRC(object):
         self.unhandle = self.pluginManager.unhandle
         self.handlers = self.pluginManager.handlers
         self.plugins = self.pluginManager.plugins
+        self.getPlugin = self.pluginManager.getPlugin
         self.pluginManager.loadAllPlugins()
         self.running = False
         
@@ -167,22 +174,22 @@ class IRC(object):
            
     def connect(self):
         self.conn = socket.socket()
+        self.conn.settimeout(60)
         self.conn.connect((self.config["host"], self.config["port"]))
         self.sendLine("USER "+self.config["ident"]+" * * *")
         self.sendLine("NICK "+self.config["nickname"])
         
         self.running = True
         while self.running:
-            data = self._readline()
-            #print(data)
-            #if err == "timeout":
-                #err = nil
-                #sendLine("PING back")
-                #data, err = conn:receive()
-                #--self:print(data)
-            #end
-            #if err: error(err) end
-            #--self:print(data)
+            try:
+                data = self._readline()
+            except socket.timeout:
+                self.sendLine("PING BACK")
+                try:
+                    data = self._readline()
+                    continue
+                except socket.timeout:
+                    raise IOError("Connection was broken?")
           
             words = data.split(" ")
             
@@ -211,14 +218,16 @@ class IRC(object):
                 # We got a message
                 channel = words[2]
                 message = data[data.find(":", data.find(channel[(channel.find("-") == -1 and 1 or channel.find("-")):]))+1:]
-                if message.find("\01ACTION") == 1:
+                if message.find("\x01ACTION") == 0:
                     # String was found, it's an action
-                    self.pluginManager.event("action", channel, user, message[9:-2])
+                    self.pluginManager.event("action", channel, user, message[8:-1])
                 elif message.find(self.config["cmdPrefix"]) == 0:
                     # String was found, it's a command!
                     args = message.split(" ")
                     cmd = args[0][len(self.config["cmdPrefix"]):]
+                    print cmd
                     args.pop(0)
+                    self.pluginManager.event("message", channel, user, message)
                     self.pluginManager.event("command", channel, user, cmd, args)
                 else:
                     # Strings not found, it's a message
@@ -260,7 +269,7 @@ class IRC(object):
         self.pluginManager.event("message", channel, self.config["nickname"], message)
         
     def doAction(self, channel, action):
-        self.sendLine("PRIVMSG "+channel+" :\01ACTION"+action+"\01")
+        self.sendLine("PRIVMSG "+channel+" :\x01ACTION "+action+" \x01")
         self.pluginManager.event("action", channel, self.config["nickname"], action)
     
     def doQuit(self, message=None):
@@ -285,13 +294,13 @@ class IRC(object):
         self.pluginManager.event("part", self.config["nickname"], (message or ""))
 
 cfg = {
-    "host" : "irc.freenode.net",
+    "host" : "irc.tddirc.net",
     "port" : 6667,
     "nickname" : "SciPyBot",
     "ident" : "SciPyBot",
     "loginname" : None,
     "loginpass" : None,
-    "start_channels" : [ "#pyunobot"],
+    "start_channels" : [ "#hackerthreads"],
     "start_plugins" : ["Printer", "PluginLoader"],
     "cmdPrefix" : "+"
 }

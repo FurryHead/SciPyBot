@@ -5,10 +5,10 @@ class PluginLoader(object):
         self.server = server
         self.server.pluginManager.loadPlugin("Auth")
         self.commands = ["load", "unload", "reload", "reloadall", "loaded"]
-        self.server.handle("command", self.handle_command, self.commands)
+        self.server.handle("command", getattr(self, "handle_command"), self.commands)
         
     def handle_command(self, channel, user, cmd, args):
-        if self.server.plugins["Auth"].isMod(user):
+        if self.server.getPlugin("auth").isMod(user):
             if cmd == "reloadall":
                 self.server.pluginManager.unloadAllPlugins()
                 errs = self.server.pluginManager.loadAllPlugins()

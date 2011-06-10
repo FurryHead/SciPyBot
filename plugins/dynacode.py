@@ -9,7 +9,7 @@ class DynaCode(object):
         self.env = { }
     
     def handle_command(self, channel, user, cmd, args):
-        if self.server.plugins["Auth"].isOwner(user) and cmd == "py":
+        if self.server.getPlugin("auth").isOwner(user) and cmd == "py":
             if len(args) < 1:
                 self.server.doMessage(channel, user+": Not enough arguments.")
                 return

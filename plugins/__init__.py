@@ -13,10 +13,10 @@ def plugin(cls):
     modFile = clsFile.split(os.sep)[1]
     
     #Append the class name to the list indexed by module file name
-    mList[modFile].append(cls.__name__)
+    mList[modFile].append(cls.__name__.lower())
     
     #Set class (plugin) name to the class (plugin) reference
-    pList[cls.__name__] = cls
+    pList[cls.__name__.lower()] = cls
     
     #return cls, since decorators must return the "new" type
     return cls
@@ -78,7 +78,7 @@ def __reload(pluginName):
 def getPlugin(name):
     """ Helper function to get a plugin's class. """
     try:
-        return pList[name]
+        return pList[name.lower()]
     except KeyError:
         return None
 

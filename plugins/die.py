@@ -8,6 +8,6 @@ class Die(object):
         self.server.handle("command", getattr(self, "handle_command"), self.commands)
     
     def handle_command(self, channel, user, cmd, args):
-        if self.server.plugins["tools.Auth"].isOwner(user):
-            self.server.doMessage(channel, self.server.plugins["Auth"].owner + " wants me to leave, but I'll be back!")
+        if self.server.getPlugin("auth").isOwner(user):
+            self.server.doMessage(channel, self.server.getPlugin("auth").owner + " wants me to leave, but I'll be back!")
             self.server.doQuit()
