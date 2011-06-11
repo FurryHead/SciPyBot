@@ -297,13 +297,13 @@ class IRC(object):
         self.pluginManager.event("mode", channel, self.config["nickname"], mode, (user if user is not None else ""))
 
 cfg = {
-    "host" : "irc.tddirc.net",
+    "host" : "irc.freenode.net",
     "port" : 6667,
     "nickname" : "SciPyBot",
     "ident" : "SciPyBot",
     "loginname" : None,
     "loginpass" : None,
-    "start_channels" : [ "#hackerthreads"],
+    "start_channels" : [ "#guppy"],
     "start_plugins" : ["Printer", "PluginLoader"],
     "cmdPrefix" : "+"
 }
