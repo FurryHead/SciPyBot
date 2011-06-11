@@ -225,7 +225,6 @@ class IRC(object):
                     # String was found, it's a command!
                     args = message.split(" ")
                     cmd = args[0][len(self.config["cmdPrefix"]):]
-                    print cmd
                     args.pop(0)
                     self.pluginManager.event("message", channel, user, message)
                     self.pluginManager.event("command", channel, user, cmd, args)
@@ -292,6 +291,10 @@ class IRC(object):
     def doPart(self, channel, message=None):
         self.sendLine("PART "+channel)
         self.pluginManager.event("part", self.config["nickname"], (message or ""))
+    
+    def doMode(self, channel, mode, user=None):
+        self.sendLine("MODE "+channel+" "+mode+(user if user is not None else ""))
+        self.pluginManager.event("mode", channel, self.config["nickname"], mode, (user if user is not None else ""))
 
 cfg = {
     "host" : "irc.tddirc.net",

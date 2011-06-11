@@ -1,10 +1,11 @@
+import sys
 
 @plugin
 class PluginLoader(object):
     def __init__(self, server):
         self.server = server
         self.server.pluginManager.loadPlugin("Auth")
-        self.commands = ["load", "unload", "reload", "reloadall", "loaded"]
+        self.commands = ["load", "unload", "reload", "reloadall", "loaded", "allplugins"]
         self.server.handle("command", getattr(self, "handle_command"), self.commands)
         
     def handle_command(self, channel, user, cmd, args):
@@ -18,6 +19,9 @@ class PluginLoader(object):
                         errStr += "Plugin "+k+": "+v+" ----- "
                     self.server.doMessage(channel, user+": Exceptions occurred with the following plugins: "+errStr)
                 return 
+            elif cmd == "allplugins":
+                self.server.doMessage(channel, user+": Available plugins: "+" ".join(sys.modules["__main__"].plugins.pList.keys()))
+                return
                 
             if len(args) < 1:
                 self.server.doMessage(channel, user+": Not enough arguments.")
