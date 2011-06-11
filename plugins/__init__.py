@@ -36,7 +36,7 @@ def refresh(pluginName = None):
         mList.clear()
         
         #load every module in the plugins package
-        _files = [os.path.join("plugins", f) for f in os.listdir("plugins") if f != "__init__.py" and not f.endswith(".pyc") and not os.path.isdir(os.path.join("plugins",f))]
+        _files = [os.path.join("plugins", f) for f in os.listdir("plugins") if f != "__init__.py" and f.endswith(".py") and not os.path.isdir(os.path.join("plugins",f))]
         
         #for file (module) in the file list
         for f in _files:

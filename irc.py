@@ -121,10 +121,12 @@ class PluginManager(object):
                     for cmd,func in eList.items():
                         if func.__self__ == inst:
                             del eList[cmd]
+                            inst.__del__()
                 else:
                     for func in eList[:]:
                         if func.__self__ == inst:
-                            eList.remove(inst)
+                            eList.remove(func)
+                            inst.__del__()
                             
             del self.plugins[pluginName.lower()]
         else:
