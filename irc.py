@@ -121,12 +121,16 @@ class PluginManager(object):
                     for cmd,func in eList.items():
                         if func.__self__ == inst:
                             del eList[cmd]
-                            inst.__del__()
+                            d = getattr(inst, "__del__", None)
+                            if d is not None:
+                                d()
                 else:
                     for func in eList[:]:
                         if func.__self__ == inst:
                             eList.remove(func)
-                            inst.__del__()
+                            d = getattr(inst, "__del__", None)
+                            if d is not None:
+                                d()
                             
             del self.plugins[pluginName.lower()]
         else:
@@ -218,7 +222,7 @@ class IRC(object):
             
             elif words[1] == "PRIVMSG":
                 # We got a message
-                channel = words[2]
+                channel = (words[2] if words[2] != self.config["nickname"] else user)
                 message = data[data.find(":", data.find(channel[(channel.find("-") == -1 and 1 or channel.find("-")):]))+1:]
                 if message.find("\x01ACTION") == 0:
                     # String was found, it's an action
@@ -292,7 +296,7 @@ class IRC(object):
         
     def doPart(self, channel, message=None):
         self.sendLine("PART "+channel)
-        self.pluginManager.event("part", self.config["nickname"], (message or ""))
+        self.pluginManager.event("part", channel, self.config["nickname"], (message or ""))
     
     def doMode(self, channel, mode, user=None):
         self.sendLine("MODE "+channel+" "+mode+(user if user is not None else ""))
@@ -305,7 +309,7 @@ cfg = {
     "ident" : "SciPyBot",
     "loginname" : None,
     "loginpass" : None,
-    "start_channels" : [ "#guppy"],
+    "start_channels" : [ "#guppy" ],
     "start_plugins" : ["Printer", "PluginLoader"],
     "cmdPrefix" : "+"
 }

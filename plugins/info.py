@@ -62,41 +62,7 @@ class Info(object):
             if k is not None and v is not None:
                 self.server.doMessage(channel, user + ": " + k + ": " + v)
             else:
-                if re.search(tmp, "ies$"):
-                    tmp2 = re.sub("ies$", "y", tmp)
-                    k,v = self.getInfo(tmp2)
-                    if k is not None and v is not None: 
-                        self.server.doMessage(channel, user + ": " + k + ": " + v)
-                        
-                elif re.search("ves$", tmp):
-                    tmp2 = re.sub("ves$", "f", tmp)
-                    k,v = self.getInfo(tmp2)
-                    if k is not None and v is not None: 
-                        self.server.doMessage(channel, user + ": " + k + ": " + v)
-                    else:
-                        tmp2 = re.sub("ves$", "fe", tmp)
-                        k,v = self.getInfo(tmp2)
-                        if k is not None and v is not None:
-                            self.server.doMessage(channel, user + ": " + k + ": " + v)
-                        else:
-                            tmp2 = re.sub("ves$", "ff", tmp)
-                            k,v = self.getInfo(tmp2)
-                            if k is not None and v is not None:
-                                self.server.doMessage(channel, user + ": " + k + ": " + v)
-                                
-                elif re.search("es$", tmp):
-                    tmp2 = re.sub( "es$", "", tmp)
-                    k,v = self.getInfo(tmp2)
-                    if k is not None and v is not None: 
-                        self.server.doMessage(channel, user + ": " + k + ": " + v)
-                        
-                elif re.search("s$", tmp):
-                    tmp2 = re.sub("s$", "", tmp)
-                    k,v = self.getInfo(tmp2)
-                    if k and v: 
-                        self.server.doMessage(channel, user + ": " + k + ": " + v)
-                        
-                elif not info_silent:
+                if not info_silent:
                     self.server.doMessage(channel, user + ", I don't know what " + tmp + " is.")
                     
         elif self.server.getPlugin("auth").isMod(user):
@@ -143,7 +109,7 @@ class Info(object):
                 else:
                     self.server.doMessage(channel, "I don't know what "+tmp+" is.")
             elif cmd == "fulldb":
-                self.server.doMessage(channel, user+": My database contains (separated by '#'): "+"#".join(self.infodb.keys()))
+                self.server.doMessage(channel, user+": My database contains (separated by '#'): "+" # ".join(self.infodb.keys()))
     
     def handle_message(self, channel, user, message):
         if message.lower().startswith("what"):
